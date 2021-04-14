@@ -390,10 +390,10 @@ void updateBrightness() { // Read analog sensor to detect brightness
 
   if (sensorWert < 30) {
     newBrightness = 1;
-  } else if (sensorWert < 200) {
-    newBrightness = map(sensorWert, 30, 200, 1, 150);
-  } else if (sensorWert < 300) {
-    newBrightness = map(sensorWert, 200, 300, 150, 255);
+  } else if (sensorWert < 150) {
+    newBrightness = map(sensorWert, 30, 150, 1, 150);
+  } else if (sensorWert < 250) {
+    newBrightness = map(sensorWert, 150, 250, 150, 255);
   } else {
     newBrightness = 255;
   }
