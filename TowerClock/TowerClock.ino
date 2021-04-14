@@ -429,7 +429,10 @@ void printTowerTime(CRGB color) {
     static float startIndex = 0;
     startIndex = startIndex - 0.5f; /* motion speed */
 
-    FillLEDsFromPaletteColors( (int)startIndex, RainbowStripeColors_p, LINEARBLEND); // RainbowColors_p
+    if(brightness == 1)
+      FillLEDsFromPaletteColors( (int)startIndex, SetupBlackAndWhiteStripedPalette(), LINEARBLEND);
+    else
+      FillLEDsFromPaletteColors( (int)startIndex, RainbowStripeColors_p, LINEARBLEND); // RainbowColors_p
 
     FastLED.show();
     printTowerLight();
@@ -482,7 +485,7 @@ void printTowerTime(CRGB color) {
   if (INFO)printDateTime(now);
 }
 
-// automatic DST detection (summer- / wintertime
+// automatic DST detection (summer- / wintertime)
 void checkForDST(DateTime now) {
   if (now.month() >= 4 && now.month() <= 9 && DSTOffset == 0) {
     // summertime

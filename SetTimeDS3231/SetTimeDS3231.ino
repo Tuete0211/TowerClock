@@ -1,6 +1,6 @@
 /*
 
-Sets the time and prints back time stamps for 5 seconds
+Sets the time and prints back time stamps for 10 seconds
 
 Based on DS3231_set.pde
 by Eric Ayars
@@ -82,7 +82,7 @@ void GetDateStuff(byte& Year, byte& Month, byte& Day, byte& DoW,
   // now Second
   Temp1 = (byte)InString[11] -48;
   Temp2 = (byte)InString[12] -48;
-  Second = Temp1*10 + Temp2;
+  Second = Temp1*10 + Temp2 + 1;
 }
 
 void setup() {
@@ -148,7 +148,7 @@ void loop() {
     digitalWrite(LEDpin, LOW);
     
     // Give time at next five seconds
-    for (int i=0; i<5; i++){
+    for (int i=0; i<10; i++){
         delay(1000);
         Serial.print(Clock.getYear(), DEC);
         Serial.print("-");
