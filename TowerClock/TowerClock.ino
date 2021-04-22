@@ -91,6 +91,9 @@ void setup() {
   // reset LED-Strip to black       --> not needed, since the welcomeprogramm stops with the static lights on
   //FastLED.clear(); // <--> fill_solid( leds, NUM_LEDS, CRGB::Red);
 
+  DateTime now = RTC.now();
+  checkForDST(now);
+
   if (DEBUG) Serial.println("Setup finished");
 }
 
@@ -417,7 +420,7 @@ void updateBrightness() { // Read analog sensor to detect brightness
 void printTowerTime(CRGB color) {
   DateTime now = RTC.now();
 
-  int hour = now.hour() + DSTOffset;
+  int hour = (now.hour() + DSTOffset) % 24;
   int minutes = now.minute();
   int seconds = now.second();
 
