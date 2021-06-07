@@ -1,8 +1,8 @@
 /**
    Rheinturm Implementierung
 
-   By: Fiete Hiersig
-   
+   @author Fiete Hiersig
+
    Der Rheinturm Düsseldorf herbergt die größte dezimale Zeitskala entlang des Turmschaftes.
    Diese Uhr besteht im originalen aus 62 Bulaugen mit starken RGB-LEDs. Diese LEDs ermöglichen die Anzeige der Zeit.
    Für die Umsetztung dieses Projektes wird benötigt:
@@ -49,7 +49,7 @@ struct CustomColors {
   CRGB Magenta = CRGB(255, 0, 255);
   CRGB UpperDeck = CRGB(15, 0, 100);    //*/CRGB(20, 0, 200);
   CRGB Black = CRGB(0, 0, 0);
-  CRGB White = CRGB(255, 255, 255);
+  CRGB White = CRGB(180, 180, 180);
 } colors;
 
 //Times
@@ -61,6 +61,7 @@ int DSTOffset = 0;
 
 // Modes
 int currentMode = 0;
+bool isSetClock = false;
 
 
 //                //
@@ -161,7 +162,7 @@ void welcomeProgram() {
   leds[58] = colors.White;
   FastLED.show();
   delay(150);
-  for(int i = 0; i < 100; i++) {
+  for (int i = 0; i < 100; i++) {
     fadeToBlackBy(leds, NUM_LEDS, 10);
     FastLED.show();
     delay(15);
@@ -266,27 +267,27 @@ void loop() {
   updateMode();
   delay(2);
   switch (currentMode) {
-    case 0: {
+    case 0: {                 // display time
         printTowerLight();
         printTowerTime(colors.White);
         break;
       }
-    case 1: {
+    case 1: {                 // display date
         printTowerLight();
         printTowerDate(colors.White);
         break;
       }
-    case 2: {
+    case 2: {                 // display temperature
         printTowerLight();
         printTowerTemperature();
         break;
       }
-    case 3: {
+    case 3: {                 // display without time
         updateBrightness(); // change brightness depending on brightness of room (sensor)
         printTowerLight();
         break;
       }
-    case 4: {
+    case 4: {                 // display rainbow
         updateBrightness();
         //static uint8_t startIndex = 0;
         static float startIndex = 0;
@@ -299,7 +300,7 @@ void loop() {
         printTowerLight();
         break;
       }
-    case 5: {
+    case 5: {                 // display stripes
         updateBrightness();
         static float startIndex = 0;
         startIndex = startIndex + 0.8f; /* motion speed */
@@ -311,12 +312,16 @@ void loop() {
         printTowerLight();
         break;
       }
-    case 6: {
+    case 6: {                 // display clock to learn
         updateBrightness();
         FastLED.clear();
         fill_solid(leds, NUM_LEDS_CLOCK, colors.White);
         printTimeStatic();
         printTowerLight();
+        break;
+      }
+    case 7: {           // set time via Serial Connection
+        setClockSerial();
         break;
       }
     default: {
@@ -350,6 +355,11 @@ void updateMode() {
   else if (modeButton.getPressed3x()) {
     // surpise - teaching is amazing
     currentMode = 6;
+    modeChanged = true;
+  }
+  else if (modeButton.getPressed4x()) {
+    // setting the clock
+    currentMode = 7;
     modeChanged = true;
   }
   else if (modeButton.getLongPressed()) {
@@ -432,7 +442,7 @@ void printTowerTime(CRGB color) {
     static float startIndex = 0;
     startIndex = startIndex - 0.5f; /* motion speed */
 
-    if(brightness == 1)
+    if (brightness == 1)
       FillLEDsFromPaletteColors( (int)startIndex, SetupBlackAndWhiteStripedPalette(), LINEARBLEND);
     else
       FillLEDsFromPaletteColors( (int)startIndex, RainbowStripeColors_p, LINEARBLEND); // RainbowColors_p
@@ -742,6 +752,161 @@ void printTowerLight() {
   FastLED.show();
 }
 
+void ReadSetClockString(byte& Year, byte& Month, byte& Day, byte& DoW,
+                        byte& Hour, byte& Minute, byte& Second) {
+  // Call this if you notice something coming in on
+  // the serial port. The stuff coming in should be in
+  // the order YYMMDDwHHMMSS, with an 'x' at the end.
+  boolean GotString = false;
+  char InChar;
+  byte Temp1, Temp2;
+  char InString[20];
+
+  byte j = 0;
+  while (!GotString) {
+    if (Serial.available()) {
+      InChar = Serial.read();
+      InString[j] = InChar;
+      j += 1;
+      if (InChar == 'x') {
+        GotString = true;
+      }
+    }
+  }
+  Serial.println(InString);
+  // Read Year first
+  Temp1 = (byte)InString[0] - 48;
+  Temp2 = (byte)InString[1] - 48;
+  Year = Temp1 * 10 + Temp2;
+  // now month
+  Temp1 = (byte)InString[2] - 48;
+  Temp2 = (byte)InString[3] - 48;
+  Month = Temp1 * 10 + Temp2;
+  // now date
+  Temp1 = (byte)InString[4] - 48;
+  Temp2 = (byte)InString[5] - 48;
+  Day = Temp1 * 10 + Temp2;
+  // now Day of Week
+  DoW = (byte)InString[6] - 48;
+  // now Hour
+  Temp1 = (byte)InString[7] - 48;
+  Temp2 = (byte)InString[8] - 48;
+  Hour = Temp1 * 10 + Temp2;
+  // now Minute
+  Temp1 = (byte)InString[9] - 48;
+  Temp2 = (byte)InString[10] - 48;
+  Minute = Temp1 * 10 + Temp2;
+  // now Second
+  Temp1 = (byte)InString[11] - 48;
+  Temp2 = (byte)InString[12] - 48;
+  Second = Temp1 * 10 + Temp2 + 1;
+}
+
+/*
+  void setTimeSerial() {
+  if (Serial.available()) {
+
+    byte Year;
+    byte Month;
+    byte Date;
+    byte DoW;
+    byte Hour;
+    byte Minute;
+    byte Second;
+
+    ReadSetClockString(Year, Month, Date, DoW, Hour, Minute, Second);
+
+    Clock.setClockMode(false);  // set to 24h
+    //setClockMode(true); // set to 12h
+
+    Clock.setSecond(Second);
+    Clock.setMinute(Minute);
+    Clock.setHour(Hour);
+    Clock.setDate(Date);
+    Clock.setMonth(Month);
+    Clock.setYear(Year);
+    Clock.setDoW(DoW);
+
+    /*
+    // Give time at next five seconds
+    for (int i = 0; i < 10; i++) {
+      delay(1000);
+      Serial.print(Clock.getYear(), DEC);
+      Serial.print("-");
+      Serial.print(Clock.getMonth(Century), DEC);
+      Serial.print("-");
+      Serial.print(Clock.getDate(), DEC);
+      Serial.print(" ");
+      Serial.print(Clock.getHour(h12, PM), DEC); //24-hr
+      Serial.print(":");
+      Serial.print(Clock.getMinute(), DEC);
+      Serial.print(":");
+      Serial.println(Clock.getSecond(), DEC);
+    }
+    Serial.println("Time succesfully set!");
+
+  }
+  delay(1000);
+  }
+*/
+
+void setClockSerial() {
+  if (!isSetClock) {
+    // prepare set clock
+    if (!DEBUG && ! INFO) {
+      Serial.begin(9600);
+    }
+    delay(2000);
+
+    // print instructions to set clock
+    Serial.println("_____________");
+    Serial.println("To set time of the DS3231 modul enter with the order:");
+    Serial.println("YYMMDDwHHMMSS");
+    Serial.println("the command should be ended by an 'x'");
+    Serial.println("Please enter standard time (winter time)");
+    Serial.println("Have fun!");
+
+    isSetClock = true;
+  } else {
+    if (Serial.available()) {
+      // set clock
+      byte Year;
+      byte Month;
+      byte Date;
+      byte DoW;
+      byte Hour;
+      byte Minute;
+      byte Second;
+
+      ReadSetClockString(Year, Month, Date, DoW, Hour, Minute, Second);
+
+      RTCHardware.setClockMode(false);  // set to 24h
+      //setClockMode(true); // set to 12h
+
+      RTCHardware.setSecond(Second);
+      RTCHardware.setMinute(Minute);
+      RTCHardware.setHour(Hour);
+      RTCHardware.setDate(Date);
+      RTCHardware.setMonth(Month);
+      RTCHardware.setYear(Year);
+      RTCHardware.setDoW(DoW);
+
+      // close Serial
+      if (!DEBUG && ! INFO) {
+        Serial.end();
+      }
+      // display clock
+      currentMode = 0;
+      // reset times
+      currentDate = 111;
+      currentHour = 111;
+      currentMin = 111;
+      currentSec = 111;
+      isSetClock = false;
+    }
+  }
+  delay(1000);
+}
 
 //                      //
 //  ### DEBUG Stuff ### //

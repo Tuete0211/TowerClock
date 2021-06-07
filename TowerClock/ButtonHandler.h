@@ -14,6 +14,7 @@ class ButtonHandler {
     bool getPressed1x();
     bool getPressed2x();
     bool getPressed3x();
+    bool getPressed4x();
     bool getLongPressed();
 
     bool error = false;
@@ -29,7 +30,7 @@ class ButtonHandler {
     bool pressed1x = false;
     bool pressed2x = false;
     bool pressed3x = false;
-    //bool pressed4x = false;
+    bool pressed4x = false;
     bool longPressed = false;
 };
 

@@ -13,7 +13,7 @@ void ButtonHandler::loop() {
   // check if pressed
   bool input = digitalRead(pin); // == HIGH ? true : false;                //check at PinOut
   uint16_t time = millis();
-  
+
   if (!pressed && input) {          // start button press
     pressStartTime = time;
     pressed = true;
@@ -44,6 +44,9 @@ void ButtonHandler::loop() {
         case 3:
           pressed3x = true;
           break;
+        case 4:
+          pressed4x = true;
+          break;
         default:
           error = true;
           break;
@@ -55,8 +58,9 @@ void ButtonHandler::loop() {
       if (pressed1x) pressed1x = false;
       if (pressed2x) pressed2x = false;
       if (pressed3x) pressed3x = false;
+      if (pressed4x) pressed4x = false;
       if (longPressed) longPressed = false;
-      
+
     }
   }
 }
@@ -76,6 +80,12 @@ bool ButtonHandler::getPressed2x() {
 bool ButtonHandler::getPressed3x() {
   bool p = pressed3x;
   if (p) pressed3x = false;
+  return p;
+}
+
+bool ButtonHandler::getPressed4x() {
+  bool p = pressed4x;
+  if (p) pressed4x = false;
   return p;
 }
 
