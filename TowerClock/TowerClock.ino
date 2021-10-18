@@ -542,7 +542,8 @@ void checkForDST(DateTime now) {
     // normal time (winter)
     DSTOffset = 0;
   }
-  else if (now.month() == 10 && now.day() >= 25 && DSTOffset == 1) {
+  else if (now.month() == 10) {
+    if(now.day() >= 25 && DSTOffset == 1) {
     switch (RTCHardware.getDoW()) {
       case 7:
         if (now.hour() >= 2)
@@ -574,6 +575,9 @@ void checkForDST(DateTime now) {
         if (now.day() >= 31)
           DSTOffset = 0;
         break;
+    }
+    } else {
+      DSTOffset = 1;
     }
   }
 }
