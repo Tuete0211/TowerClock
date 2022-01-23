@@ -24,7 +24,7 @@
 #define VERSION 2.1     // This Script is created for Version 2 and above. Since v2 and v2.1 have slightly different wiring it's defined here.
 
 #define DEBUG 0
-#define INFO 0
+#define INFO 1
 #define NUM_LEDS 66
 #define NUM_LEDS_CLOCK 55
 #define NUM_MODES 6
@@ -777,6 +777,7 @@ void ReadSetClockString(byte& Year, byte& Month, byte& Day, byte& DoW,
       }
     }
   }
+  Serial.print("Received timestamp: ");
   Serial.println(InString);
   // Read Year first
   Temp1 = (byte)InString[0] - 48;
@@ -806,72 +807,24 @@ void ReadSetClockString(byte& Year, byte& Month, byte& Day, byte& DoW,
   Second = Temp1 * 10 + Temp2 + 1;
 }
 
-/*
-  void setTimeSerial() {
-  if (Serial.available()) {
-
-    byte Year;
-    byte Month;
-    byte Date;
-    byte DoW;
-    byte Hour;
-    byte Minute;
-    byte Second;
-
-    ReadSetClockString(Year, Month, Date, DoW, Hour, Minute, Second);
-
-    Clock.setClockMode(false);  // set to 24h
-    //setClockMode(true); // set to 12h
-
-    Clock.setSecond(Second);
-    Clock.setMinute(Minute);
-    Clock.setHour(Hour);
-    Clock.setDate(Date);
-    Clock.setMonth(Month);
-    Clock.setYear(Year);
-    Clock.setDoW(DoW);
-
-    /*
-    // Give time at next five seconds
-    for (int i = 0; i < 10; i++) {
-      delay(1000);
-      Serial.print(Clock.getYear(), DEC);
-      Serial.print("-");
-      Serial.print(Clock.getMonth(Century), DEC);
-      Serial.print("-");
-      Serial.print(Clock.getDate(), DEC);
-      Serial.print(" ");
-      Serial.print(Clock.getHour(h12, PM), DEC); //24-hr
-      Serial.print(":");
-      Serial.print(Clock.getMinute(), DEC);
-      Serial.print(":");
-      Serial.println(Clock.getSecond(), DEC);
-    }
-    Serial.println("Time succesfully set!");
-
-  }
-  delay(1000);
-  }
-*/
-
 void setClockSerial() {
   if (!isSetClock) {
     // prepare set clock
     if (!DEBUG && ! INFO) {
       Serial.begin(9600);
     }
-    delay(2000);
-
-    // print instructions to set clock
-    Serial.println("_____________");
-    Serial.println("To set time of the DS3231 modul enter with the order:");
-    Serial.println("YYMMDDwHHMMSS");
-    Serial.println("the command should be ended by an 'x'");
-    Serial.println("Please enter standard time (winter time)");
-    Serial.println("Have fun!");
-
     isSetClock = true;
+    delay(500);
+    
+    // print instructions to set clock
+    //Serial.println("_____________");
+    //Serial.println("To set time of the DS3231 modul enter with the order:");
+    //Serial.println("YYMMDDwHHMMSS");
+    //Serial.println("the command should be ended by an 'x'");
+    //Serial.println("Please enter standard time (winter time)");
+    //Serial.println("Have fun!");
   } else {
+    // read serial or write name
     if (Serial.available()) {
       // set clock
       byte Year;
@@ -907,6 +860,9 @@ void setClockSerial() {
       currentMin = 111;
       currentSec = 111;
       isSetClock = false;
+    } else {
+      Serial.println("--TowerClock--");
+      delay(200);
     }
   }
   delay(1000);
