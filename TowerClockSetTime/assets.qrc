@@ -1,0 +1,10 @@
+<RCC>
+    <qresource prefix="/images">
+        <file alias="Silhouette">images/Rheinturm_Silhouette.png</file>
+        <file alias="favicon_icon">images/favicon.ico</file>
+        <file alias="favicon">images/favicon.png</file>
+    </qresource>
+    <qresource prefix="/fonts">
+        <file alias="moonhouse">fonts/moonhouse.ttf</file>
+    </qresource>
+</RCC>
