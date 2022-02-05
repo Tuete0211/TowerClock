@@ -21,7 +21,7 @@ void ButtonHandler::loop() {
   else if (pressed && input) {
     // check for longPressed
     if (time - pressStartTime > 3000) {    //long press threshold
-      longPressed = true;
+      m_buttonState = ButtonState::PressedLong;
       pressStartTime = time;
       pressedCounter = -1;
       // TODO: nothing else should be checked
@@ -36,18 +36,19 @@ void ButtonHandler::loop() {
     if (pressStopTime + 500 < time) {      // threshold between short button presses
       switch (pressedCounter) {
         case 1:
-          pressed1x = true;
+          m_buttonState = ButtonState::Pressed1x;
           break;
         case 2:
-          pressed2x = true;
+        m_buttonState = ButtonState::Pressed2x;
           break;
         case 3:
-          pressed3x = true;
+        m_buttonState = ButtonState::Pressed3x;
           break;
         case 4:
-          pressed4x = true;
+        m_buttonState = ButtonState::Pressed4x;
           break;
         default:
+        m_buttonState = ButtonState::None;
           error = true;
           break;
       }
@@ -55,42 +56,13 @@ void ButtonHandler::loop() {
     }
     if (pressStopTime + 1000 < time) {    // reset options after threshold (long threshold)
       // reset every option
-      if (pressed1x) pressed1x = false;
-      if (pressed2x) pressed2x = false;
-      if (pressed3x) pressed3x = false;
-      if (pressed4x) pressed4x = false;
-      if (longPressed) longPressed = false;
-
+      m_buttonState = ButtonState::None;
     }
   }
 }
 
-bool ButtonHandler::getPressed1x() {
-  bool p = pressed1x;
-  if (p) pressed1x = false;
-  return p;
-}
-
-bool ButtonHandler::getPressed2x() {
-  bool p = pressed2x;
-  if (p) pressed2x = false;
-  return p;
-}
-
-bool ButtonHandler::getPressed3x() {
-  bool p = pressed3x;
-  if (p) pressed3x = false;
-  return p;
-}
-
-bool ButtonHandler::getPressed4x() {
-  bool p = pressed4x;
-  if (p) pressed4x = false;
-  return p;
-}
-
-bool ButtonHandler::getLongPressed() {
-  bool p = longPressed;
-  if (p) longPressed = false;
-  return p;
+ButtonHandler::ButtonState ButtonHandler::getButtonState(){
+  ButtonState bs = m_buttonState;
+  if(bs != ButtonState::None) m_buttonState = ButtonState::None;
+  return bs;
 }

@@ -9,16 +9,19 @@ class ButtonHandler {
     ButtonHandler(uint8_t pinNumber);
     //~ButtonHandler();
 
-    void loop();
-
-    bool getPressed1x();
-    bool getPressed2x();
-    bool getPressed3x();
-    bool getPressed4x();
-    bool getLongPressed();
-
     bool error = false;
 
+    enum ButtonState {
+        None,
+        Pressed1x,
+        Pressed2x,
+        Pressed3x,
+        Pressed4x,
+        PressedLong
+    };
+
+    void loop();
+    ButtonState getButtonState();
 
   private:
     uint8_t pin = 2;
@@ -27,11 +30,7 @@ class ButtonHandler {
     uint16_t pressStopTime = 0;
     uint8_t pressedCounter = 0;
 
-    bool pressed1x = false;
-    bool pressed2x = false;
-    bool pressed3x = false;
-    bool pressed4x = false;
-    bool longPressed = false;
+    ButtonState m_buttonState = ButtonState::None;
 };
 
 #endif
