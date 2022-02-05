@@ -2,8 +2,9 @@
 
 Arduino Program to show the time (Lichtzeitpegel) from the Rhinetower in Düsseldorf.
 
-## Set Time
+## TowerClock - Set Time
 
-Use the Arduino script 'SetTimeDS3231' and follow the instructions in the Serial Monitor.
+Windows Program to sync time of the tower.
+Download and extract `TowerClockSetTime.zip` file and run `TowerClockSetTime.exe`.
 
-After setting the time please reinstall the 'TowerClock' script.
+FYI: The TowerClock might restart in the connection process.
