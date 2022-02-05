@@ -17,25 +17,26 @@
    - FastLED  -> https://github.com/FastLED/FastLED
 */
 
+#include "ButtonHandler.h"
 #include <DS3231.h>
 #include <FastLED.h>
-#include "ButtonHandler.h"
 
 #define VERSION 2.1     // This Script is created for Version 2 and above. Since v2 and v2.1 have slightly different wiring it's defined here.
 
-#define DEBUG 0
-#define INFO 1
-#define NUM_LEDS 66
-#define NUM_LEDS_CLOCK 55
-#define NUM_MODES 6
+//pin config
 #define LED_PIN 3
 #define BRIGHTNESS_PIN A2
 #define MODE_PIN 2
+// led config
+#define NUM_LEDS 66
+#define NUM_LEDS_CLOCK 55
 
+#define NUM_MODES 6
+
+ButtonHandler modeButton;
 RTClib RTC;
 DS3231 RTCHardware;
 CRGB leds[NUM_LEDS];
-ButtonHandler modeButton;
 
 //colors
 float brightness = 127; // 0-255
@@ -53,266 +54,79 @@ struct CustomColors {
 } colors;
 
 //Times
+int DSTOffset = 0;
 int currentDate = 111;
 int currentHour = 111;
 int currentMin = 111;
 int currentSec = 111;
-int DSTOffset = 0;
 
 // Modes
-int currentMode = 0;
+enum Mode {
+  Time = 0,
+  Date,
+  Temperature,
+  Idle,
+  Rainbow,
+  Stripes,
+  Lesson,
+  SerialConnection
+};
+Mode currentMode = Mode::Time;
 bool isSetClock = false;
 
+char serialBuffer[20];
 
-//                //
-//  ### SETUP ### //
-//                //
-void setup() {
-  delay(2000); // power-up safety delay
-  if (DEBUG || INFO) {
-    Serial.begin(9600);
-    Serial.println("Initializing...");
-  }
-
-  // RTC
-  Wire.begin();
-  if (DEBUG)printTime();
-
-  //FastLED
-  FastLED.addLeds<NEOPIXEL, LED_PIN>(leds, NUM_LEDS);
-  FastLED.clear();
-
-  // ButtonHandler
-  modeButton = ButtonHandler(MODE_PIN);
-
-  // start LED action
-  updateBrightness();
-  welcomeProgram();
-
-  // reset LED-Strip to black       --> not needed, since the welcomeprogramm stops with the static lights on
-  //FastLED.clear(); // <--> fill_solid( leds, NUM_LEDS, CRGB::Red);
-
-  DateTime now = RTC.now();
-  checkForDST(now);
-
-  if (DEBUG) Serial.println("Setup finished");
-}
-
-
-//                              //
-//  ### StartUp LED action ###  //
-//                              //
-void welcomeProgram() {
-  FastLED.clear();
-  delay(20);
-  // FIRST: white dot wandering up the tower
-  for (int i = 0; i < 22; i++) {
-    FastLED.clear();
-    leds[i] = colors.White;
-    FastLED.show();
-    delay(60);
-  }
-  FastLED.clear();
-  leds[22] = colors.White;
-  if (VERSION == 2) {
-    leds[64] = colors.White;
-    leds[63] = colors.White;
-  } else if (VERSION == 2.1) {
-    leds[64] = colors.White;
-    leds[65] = colors.White;
-  }
-  FastLED.show();
-  delay(60);
-  for (int i = 23; i < 39; i++) {
-    FastLED.clear();
-    leds[i] = colors.White;
-    FastLED.show();
-    delay(60);
-  }
-  FastLED.clear();
-  leds[39] = colors.White;
-  if (VERSION == 2) {
-    leds[65] = colors.White;
-    leds[62] = colors.White;
-  } else if (VERSION == 2.1) {
-    leds[62] = colors.White;
-    leds[63] = colors.White;
-  }
-  FastLED.show();
-  delay(60);
-  for (int i = 40; i < 55; i++) {
-    FastLED.clear();
-    leds[i] = colors.White;
-    FastLED.show();
-    delay(60);
-  }
-  FastLED.clear();
-  leds[55] = colors.White;
-  leds[61] = colors.White;
-  FastLED.show();
-  delay(100);
-  leds[56] = colors.White;
-  leds[60] = colors.White;
-  FastLED.show();
-  delay(120);
-  leds[57] = colors.White;
-  leds[59] = colors.White;
-  FastLED.show();
-  delay(150);
-  leds[58] = colors.White;
-  FastLED.show();
-  delay(150);
-  for (int i = 0; i < 100; i++) {
-    fadeToBlackBy(leds, NUM_LEDS, 10);
-    FastLED.show();
-    delay(15);
-  }
-  FastLED.clear();
-  // SECOND: wandering lila and red dots to fill tower lights
-  for (int i = 0; i < NUM_LEDS_CLOCK; i++) {
-    FastLED.clear();
-    leds[i] = colors.UpperDeck;
-    if (i - 1 > 0) leds[i - 1] = colors.UpperDeck;
-    if (i - 2 > 0) leds[i - 2] = colors.UpperDeck;
-    if (i - 3 > 0) leds[i - 3] = colors.UpperDeck;
-    if (i < 39 + 4) {
-      if (i - 4 > 0) leds[i - 4] = colors.Red;
-    } else {
-      if (VERSION == 2) {
-        leds[62] = colors.Red;
-        leds[65] = colors.Red;
-      } else if (VERSION == 2.1) {
-        leds[62] = colors.Red;
-        leds[63] = colors.Red;
-      }
-    }
-    if (i < 22 + 5) {
-      if (i - 5 > 0) leds[i - 5] = colors.Red;
-    } else {
-      if (VERSION == 2) {
-        leds[63] = colors.Red;
-        leds[64] = colors.Red;
-      } else if (VERSION == 2.1) {
-        leds[64] = colors.Red;
-        leds[65] = colors.Red;
-      }
-    }
-    FastLED.show();
-    delay(80);
-  }
-  FastLED.clear();
-  leds[55] = colors.UpperDeck;
-  leds[61] = colors.UpperDeck;
-  leds[54] = colors.UpperDeck;
-  leds[53] = colors.UpperDeck;
-  leds[52] = colors.UpperDeck;
-  leds[62] = colors.Red;
-  leds[65] = colors.Red;
-  leds[63] = colors.Red;
-  leds[64] = colors.Red;
-  FastLED.show();
-  delay(100);
-
-  FastLED.clear();
-  leds[56] = colors.UpperDeck;
-  leds[60] = colors.UpperDeck;
-  leds[55] = colors.UpperDeck;
-  leds[61] = colors.UpperDeck;
-  leds[54] = colors.UpperDeck;
-  leds[53] = colors.UpperDeck;
-  leds[62] = colors.Red;
-  leds[65] = colors.Red;
-  leds[63] = colors.Red;
-  leds[64] = colors.Red;
-  FastLED.show();
-  delay(150);
-
-  FastLED.clear();
-  leds[57] = colors.UpperDeck;
-  leds[59] = colors.UpperDeck;
-  leds[56] = colors.UpperDeck;
-  leds[60] = colors.UpperDeck;
-  leds[55] = colors.UpperDeck;
-  leds[61] = colors.UpperDeck;
-  leds[54] = colors.UpperDeck;
-  leds[62] = colors.Red;
-  leds[65] = colors.Red;
-  leds[63] = colors.Red;
-  leds[64] = colors.Red;
-  FastLED.show();
-  delay(200);
-
-  FastLED.clear();
-  leds[58] = colors.UpperDeck;
-  leds[57] = colors.UpperDeck;
-  leds[59] = colors.UpperDeck;
-  leds[56] = colors.UpperDeck;
-  leds[60] = colors.UpperDeck;
-  leds[55] = colors.UpperDeck;
-  leds[61] = colors.UpperDeck;
-  leds[62] = colors.Red;
-  leds[65] = colors.Red;
-  leds[63] = colors.Red;
-  leds[64] = colors.Red;
-  FastLED.show();
-  delay(1000);
-}
 
 //               //
 //  ### LOOP ### //
 //               //
 void loop() {
   delay(2);
+  serialLoop();
+  //invoke ButtonHandler
   modeButton.loop();
   updateMode();
   delay(2);
   switch (currentMode) {
-    case 0: {                 // display time
+    case Mode::Time: {                 // display time
         printTowerLight();
         printTowerTime(colors.White);
         break;
       }
-    case 1: {                 // display date
+    case Mode::Date: {                 // display date
         printTowerLight();
         printTowerDate(colors.White);
         break;
       }
-    case 2: {                 // display temperature
+    case Mode::Temperature: {                 // display temperature
         printTowerLight();
         printTowerTemperature();
         break;
       }
-    case 3: {                 // display without time
+    case Mode::Idle: {                 // display without time
         updateBrightness(); // change brightness depending on brightness of room (sensor)
         printTowerLight();
         break;
       }
-    case 4: {                 // display rainbow
+    case Mode::Rainbow: {                 // display rainbow
         updateBrightness();
-        //static uint8_t startIndex = 0;
         static float startIndex = 0;
         startIndex = startIndex - 0.5f; /* motion speed */
-
-        FillLEDsFromPaletteColors( (int)startIndex, RainbowStripeColors_p, LINEARBLEND); // RainbowColors_p
-
-        FastLED.show();
+        displayRunningLights((int)startIndex, false, true);
 
         printTowerLight();
         break;
       }
-    case 5: {                 // display stripes
+    case Mode::Stripes: {                 // display stripes
         updateBrightness();
         static float startIndex = 0;
         startIndex = startIndex + 0.8f; /* motion speed */
-
-        FillLEDsFromPaletteColors( (int)startIndex, SetupBlackAndWhiteStripedPalette(), LINEARBLEND);
-
-        FastLED.show();
+        displayRunningLights((int)startIndex, false, false);
 
         printTowerLight();
         break;
       }
-    case 6: {                 // display clock to learn
+    case Mode::Lesson: {                 // display clock to learn
         updateBrightness();
         FastLED.clear();
         fill_solid(leds, NUM_LEDS_CLOCK, colors.White);
@@ -320,8 +134,12 @@ void loop() {
         printTowerLight();
         break;
       }
-    case 7: {           // set time via Serial Connection
-        setClockSerial();
+    case Mode::SerialConnection: {           // set time via Serial Connection
+        //setClockSerial();
+        static float startIndex = 0;
+        startIndex = startIndex + 0.3f; /* motion speed */
+        FillLEDsFromPaletteColors( (int)startIndex, SetupRedAndGreenStripedPalette(), LINEARBLEND);
+        FastLED.show();
         break;
       }
     default: {
@@ -335,40 +153,40 @@ void loop() {
 //  ### Mode Switcher ### //
 //                        //
 void updateMode() {
-  bool modeChanged = false;
-  if (modeButton.getPressed1x()) {
-    // increment mode
-    currentMode++;
-    if (currentMode >= NUM_MODES) {
-      currentMode = 0;
-    }
-    modeChanged = true;
+  static bool modeChanged = false;
+  switch (modeButton.getButtonState()) {
+    case ButtonHandler::ButtonState::Pressed1x:
+      // increment mode
+      currentMode = Mode(currentMode + 1);
+      if (currentMode >= NUM_MODES)
+          currentMode = Mode::Time;
+      modeChanged = true;
+      break;
+    case ButtonHandler::ButtonState::Pressed2x:
+      //decrement mode
+      currentMode = Mode(currentMode - 1);
+      if ((int)currentMode < 0)
+        currentMode = Mode(NUM_MODES - 1);
+      modeChanged = true;
+      break;
+    case ButtonHandler::ButtonState::Pressed3x:
+      // surpise - teaching is amazing
+      currentMode = Mode::Lesson;
+      modeChanged = true;
+      break;
+    case ButtonHandler::ButtonState::Pressed4x:
+      // setting the clock
+      currentMode = Mode::SerialConnection;
+      modeChanged = true;
+      break;
+    case ButtonHandler::ButtonState::PressedLong:
+      //reset to standard mode (time)
+      currentMode = Mode::Time;
+      modeChanged = true;
+      break;
   }
-  else if (modeButton.getPressed2x()) {
-    //decrement mode
-    currentMode--;
-    if (currentMode < 0) {
-      currentMode = NUM_MODES - 1;
-    }
-    modeChanged = true;
-  }
-  else if (modeButton.getPressed3x()) {
-    // surpise - teaching is amazing
-    currentMode = 6;
-    modeChanged = true;
-  }
-  else if (modeButton.getPressed4x()) {
-    // setting the clock
-    currentMode = 7;
-    modeChanged = true;
-  }
-  else if (modeButton.getLongPressed()) {
-    //reset to standard mode
-    currentMode = 0;
-    modeChanged = true;
-  }
+
   if (modeChanged) {
-    if (INFO)Serial.println(currentMode);
     FastLED.clear();
     delay(500);
     // indicate mode number
@@ -382,15 +200,8 @@ void updateMode() {
     currentHour = 111;
     currentMin = 111;
     currentSec = 111;
+    modeChanged = false;
   }
-  /*
-    if (DEBUG) {
-      Serial.print("sensorWert: ");
-      Serial.print(sensorWert);
-      Serial.print(", ");
-      Serial.println(currentMode);
-    }
-  */
 }
 
 
@@ -415,219 +226,16 @@ void updateBrightness() { // Read analog sensor to detect brightness
 
   brightness = newBrightness;
 
+  /*
   if (DEBUG) {
     Serial.print("sensorWert: ");
     Serial.print(sensorWert);
     Serial.print(", newBrightness: ");
     Serial.println(brightness);
   }
+  */
 }
 
-
-//                //
-//  ### Time ###  //
-//                //
-void printTowerTime(CRGB color) {
-  DateTime now = RTC.now();
-
-  int hour = (now.hour() + DSTOffset) % 24;
-  int minutes = now.minute();
-  int seconds = now.second();
-
-  // Rainbow on full and half hour
-  if ((minutes == 59 || minutes == 29) && seconds >= 0 && seconds < 45 && brightness) {
-    if (INFO)Serial.println("Rainbow");
-    // start Rainbow
-    //static uint8_t startIndex = 0;
-    static float startIndex = 0;
-    startIndex = startIndex - 0.5f; /* motion speed */
-
-    if (brightness == 1)
-      FillLEDsFromPaletteColors( (int)startIndex, SetupBlackAndWhiteStripedPalette(), LINEARBLEND);
-    else
-      FillLEDsFromPaletteColors( (int)startIndex, RainbowStripeColors_p, LINEARBLEND); // RainbowColors_p
-
-    FastLED.show();
-    printTowerLight();
-    updateBrightness(); // change brightness depending on brightness of room (sensor)
-    currentMin = 111;
-    return;
-  }
-
-  if (currentMin != minutes) { // update hour and minute every minute
-    clearClock();
-    updateBrightness(); // change brightness depending on brightness of room (sensor)
-    checkForDST(now);
-    int tenHour = hour / 10;
-    Line(2, 50, colors.Black);
-    Line(tenHour, 50, color);
-    Line(9, 40, colors.Black);
-    Line((hour % 10), 40, color);
-    currentHour = hour;
-
-    int tenMin = minutes / 10;
-    Line(5, 33, colors.Black);
-    Line(tenMin, 33, color);
-    Line(9, 23, colors.Black);
-    Line((minutes % 10), 23, color);
-    currentMin = minutes;
-    if (INFO)Serial.println("Minutes");
-  }
-
-  if (currentSec != seconds) {
-    int curSec = currentSec / 10;
-    int tenSec = seconds / 10;
-    if (curSec != tenSec) {
-      Line(5, 16, colors.Black);
-      Line(tenSec, 16, color);
-    }
-    Line(9, 6, colors.Black);
-    Line((seconds % 10), 6, color);
-    currentSec = seconds;
-    if (INFO)Serial.println("Seconds");
-  }
-
-  if ((minutes == 59 || minutes == 29) && seconds >= 45) {
-    printTimeStatic();
-  }
-
-  if (seconds == 59) {
-    printTimeStatic();
-  }
-
-  if (INFO)printDateTime(now);
-}
-
-// automatic DST detection (summer- / wintertime)
-void checkForDST(DateTime now) {
-  if (now.month() >= 4 && now.month() <= 9 && DSTOffset == 0) {
-    // summertime
-    DSTOffset = 1;
-  }
-  else if (now.month() == 3 && now.day() >= 25 && DSTOffset == 0) {
-    switch (RTCHardware.getDoW()) {
-      case 7:
-        if (now.hour() >= 2)
-          DSTOffset = 1;
-        else
-          DSTOffset = 0;
-        break;
-      case 1:
-        if (now.day() >= 26)
-          DSTOffset = 1;
-        break;
-      case 2:
-        if (now.day() >= 27)
-          DSTOffset = 1;
-        break;
-      case 3:
-        if (now.day() >= 28)
-          DSTOffset = 1;
-        break;
-      case 4:
-        if (now.day() >= 29)
-          DSTOffset = 1;
-        break;
-      case 5:
-        if (now.day() >= 30)
-          DSTOffset = 1;
-        break;
-      case 6:
-        if (now.day() >= 31)
-          DSTOffset = 1;
-        break;
-    }
-  }
-  else if (now.month() >= 3 && now.month() >= 11 && DSTOffset == 1) {
-    // normal time (winter)
-    DSTOffset = 0;
-  }
-  else if (now.month() == 10) {
-    if(now.day() >= 25 && DSTOffset == 1) {
-    switch (RTCHardware.getDoW()) {
-      case 7:
-        if (now.hour() >= 2)
-          DSTOffset = 0;
-        else
-          DSTOffset = 1;
-        break;
-      case 1:
-        if (now.day() >= 26)
-          DSTOffset = 0;
-        break;
-      case 2:
-        if (now.day() >= 27)
-          DSTOffset = 0;
-        break;
-      case 3:
-        if (now.day() >= 28)
-          DSTOffset = 0;
-        break;
-      case 4:
-        if (now.day() >= 29)
-          DSTOffset = 0;
-        break;
-      case 5:
-        if (now.day() >= 30)
-          DSTOffset = 0;
-        break;
-      case 6:
-        if (now.day() >= 31)
-          DSTOffset = 0;
-        break;
-    }
-    } else {
-      DSTOffset = 1;
-    }
-  }
-}
-
-//                //
-//  ### Date ###  //
-//                //
-void printTowerDate(CRGB color) {
-  DateTime now = RTC.now();
-
-  int minutes = now.minute();
-  int day = now.day();
-  int month = now.month();
-  int year = now.year() - 2000;
-
-  if (currentMin != minutes) {
-    updateBrightness();
-    currentMin = minutes;
-  }
-
-  if (currentDate != day || int(displayedBrightness * 10) != int(brightness * 10) ) {
-    int tenDay = day / 10;
-    //Line(4, 45, colors.Black);
-    Line(tenDay, 45, color);
-    //Line(9, 35, colors.Black);
-    Line((day % 10), 35, color);
-    currentDate = day;
-
-    int tenMonth = month / 10;
-    //Line(2, 32, colors.Black);
-    Line(tenMonth, 32, color);
-    //Line(9, 22, colors.Black);
-    Line((month % 10), 22, color);
-
-    int tenYear = year / 10;
-    //Line(9, 11, colors.Black);
-    Line(tenYear, 11, color);
-    //Line(9, 1, colors.Black);
-    Line((year % 10), 1, color);
-
-    leds[21] = colors.Blue;
-    leds[34] = colors.Blue;
-    delay(2);
-    FastLED.show();
-
-    displayedBrightness = brightness;
-  }
-
-  if (INFO)printDateTime(now);
-}
 
 //                      //
 //  ### Temperatur ###  //
@@ -657,28 +265,18 @@ void printTowerTemperature() {
 //  ### Drawing Functions ### //
 //                            //
 void Line(int height, int pos, CRGB color) {
-  if (INFO && DEBUG) {
-    Serial.print(height);
-    Serial.print(", ");
-    Serial.print(pos);
-    Serial.print(", ");
-  }
   if (height == 0) return;
   for (int i = pos; i < (pos + height); i++) {
     leds[i] = color;
   }
-
-  delay(2);
+  delay(1);
   FastLED.show();
-  if (INFO)Serial.println("Draw");
 }
 
 void FillLEDsFromPaletteColors( uint8_t colorIndex, CRGBPalette16 currentPalette, TBlendType currentBlending)
 {
-  uint8_t brightness = 255;
-
   for ( int i = 0; i < NUM_LEDS_CLOCK; i++) {
-    leds[i] = ColorFromPalette( currentPalette, colorIndex, brightness, currentBlending);
+    leds[i] = ColorFromPalette( currentPalette, colorIndex, /*brightness*/ 255, currentBlending);
     colorIndex += 3;
   }
 }
@@ -696,19 +294,26 @@ CRGBPalette16 SetupBlackAndWhiteStripedPalette()
   return currentPalette;
 }
 
-void towerRainbow(int wait) {
-  int stopTime = millis() + wait;
+CRGBPalette16 SetupRedAndGreenStripedPalette()
+{
+  CRGBPalette16 currentPalette;
+  // 'black out' all 16 palette entries...
+  fill_solid( currentPalette, 16, CRGB::Black);
+  // and set every fourth one to white.
+  currentPalette[0] = CRGB::Red;
+  currentPalette[4] = CRGB::Green;
+  currentPalette[8] = CRGB::Red;
+  currentPalette[12] = CRGB::Green;
+  return currentPalette;
+}
 
-  while (stopTime > millis()) {
-    static uint8_t startIndex = 0;
-    startIndex = startIndex + 1; /* motion speed */
+void displayRunningLights(int startIndex, bool brightnessSensitive, bool rainbow){
+  if (brightnessSensitive && brightness == 1 || !rainbow)
+      FillLEDsFromPaletteColors( (int)startIndex, SetupBlackAndWhiteStripedPalette(), LINEARBLEND);
+    else
+      FillLEDsFromPaletteColors( (int)startIndex, RainbowStripeColors_p, LINEARBLEND); // RainbowColors_p
 
-    FillLEDsFromPaletteColors( startIndex, RainbowStripeColors_p, LINEARBLEND); // RainbowColors_p
-
-    FastLED.show();
-    printTowerLight();
-    delay(20);
-  }
+   FastLED.show();
 }
 
 void clearClock() {
@@ -719,8 +324,6 @@ void clearClock() {
 
 // print yellow time separators (appear close to full minutes and hours)
 void printTimeStatic() {
-  if (INFO)Serial.println("Time-Static");
-
   for (int i = 0; i <= 5; i++) {
     leds[i] = colors.Yellow;
   }
@@ -731,19 +334,15 @@ void printTimeStatic() {
   leds[38] = colors.Yellow;
   leds[39] = colors.Yellow;
   leds[49] = colors.Yellow;
-
   for (int i = 52; i < NUM_LEDS_CLOCK; i++) {
     leds[i] = colors.Yellow;
   }
-
   delay(2);
   FastLED.show();
 }
 
 // show red guide lights and illuminated upper deck (lila)
 void printTowerLight() {
-  if (INFO)Serial.println("Tower Lighting");
-
   // red guiding lights
   for (int i = 62; i < NUM_LEDS; i++) {
     leds[i] = colors.Red;
@@ -754,118 +353,6 @@ void printTowerLight() {
   }
   delay(2);
   FastLED.show();
-}
-
-void ReadSetClockString(byte& Year, byte& Month, byte& Day, byte& DoW,
-                        byte& Hour, byte& Minute, byte& Second) {
-  // Call this if you notice something coming in on
-  // the serial port. The stuff coming in should be in
-  // the order YYMMDDwHHMMSS, with an 'x' at the end.
-  boolean GotString = false;
-  char InChar;
-  byte Temp1, Temp2;
-  char InString[20];
-
-  byte j = 0;
-  while (!GotString) {
-    if (Serial.available()) {
-      InChar = Serial.read();
-      InString[j] = InChar;
-      j += 1;
-      if (InChar == 'x') {
-        GotString = true;
-      }
-    }
-  }
-  Serial.print("Received timestamp: ");
-  Serial.println(InString);
-  // Read Year first
-  Temp1 = (byte)InString[0] - 48;
-  Temp2 = (byte)InString[1] - 48;
-  Year = Temp1 * 10 + Temp2;
-  // now month
-  Temp1 = (byte)InString[2] - 48;
-  Temp2 = (byte)InString[3] - 48;
-  Month = Temp1 * 10 + Temp2;
-  // now date
-  Temp1 = (byte)InString[4] - 48;
-  Temp2 = (byte)InString[5] - 48;
-  Day = Temp1 * 10 + Temp2;
-  // now Day of Week
-  DoW = (byte)InString[6] - 48;
-  // now Hour
-  Temp1 = (byte)InString[7] - 48;
-  Temp2 = (byte)InString[8] - 48;
-  Hour = Temp1 * 10 + Temp2;
-  // now Minute
-  Temp1 = (byte)InString[9] - 48;
-  Temp2 = (byte)InString[10] - 48;
-  Minute = Temp1 * 10 + Temp2;
-  // now Second
-  Temp1 = (byte)InString[11] - 48;
-  Temp2 = (byte)InString[12] - 48;
-  Second = Temp1 * 10 + Temp2 + 1;
-}
-
-void setClockSerial() {
-  if (!isSetClock) {
-    // prepare set clock
-    if (!DEBUG && ! INFO) {
-      Serial.begin(9600);
-    }
-    isSetClock = true;
-    delay(500);
-    
-    // print instructions to set clock
-    //Serial.println("_____________");
-    //Serial.println("To set time of the DS3231 modul enter with the order:");
-    //Serial.println("YYMMDDwHHMMSS");
-    //Serial.println("the command should be ended by an 'x'");
-    //Serial.println("Please enter standard time (winter time)");
-    //Serial.println("Have fun!");
-  } else {
-    // read serial or write name
-    if (Serial.available()) {
-      // set clock
-      byte Year;
-      byte Month;
-      byte Date;
-      byte DoW;
-      byte Hour;
-      byte Minute;
-      byte Second;
-
-      ReadSetClockString(Year, Month, Date, DoW, Hour, Minute, Second);
-
-      RTCHardware.setClockMode(false);  // set to 24h
-      //setClockMode(true); // set to 12h
-
-      RTCHardware.setSecond(Second);
-      RTCHardware.setMinute(Minute);
-      RTCHardware.setHour(Hour);
-      RTCHardware.setDate(Date);
-      RTCHardware.setMonth(Month);
-      RTCHardware.setYear(Year);
-      RTCHardware.setDoW(DoW);
-
-      // close Serial
-      if (!DEBUG && ! INFO) {
-        Serial.end();
-      }
-      // display clock
-      currentMode = 0;
-      // reset times
-      currentDate = 111;
-      currentHour = 111;
-      currentMin = 111;
-      currentSec = 111;
-      isSetClock = false;
-    } else {
-      Serial.println("--TowerClock--");
-      delay(200);
-    }
-  }
-  delay(1000);
 }
 
 //                      //
@@ -892,23 +379,5 @@ void printTime() {
   Serial.print(RTCHardware.getDoW());
   Serial.print("  -  Temp: ");
   Serial.print(RTCHardware.getTemperature());
-  Serial.println();
-}
-
-void printDateTime(DateTime now) {
-
-  Serial.print(now.year(), DEC);
-  Serial.print('/');
-  Serial.print(now.month(), DEC);
-  Serial.print('/');
-  Serial.print(now.day(), DEC);
-  Serial.print(' ');
-  Serial.print(now.hour(), DEC);
-  Serial.print(':');
-  Serial.print(now.minute(), DEC);
-  Serial.print(':');
-  Serial.print(now.second(), DEC);
-  Serial.print("  -   ");
-  Serial.print(now.unixtime());
   Serial.println();
 }
