@@ -4,33 +4,33 @@
 #include <Arduino.h>
 
 class ButtonHandler {
-  public:
-    ButtonHandler();
-    ButtonHandler(uint8_t pinNumber);
-    //~ButtonHandler();
+public:
+  ButtonHandler();
+  ButtonHandler(uint8_t pinNumber);
+  //~ButtonHandler();
 
-    bool error = false;
+  bool error = false;
 
-    enum ButtonState {
-        None,
-        Pressed1x,
-        Pressed2x,
-        Pressed3x,
-        Pressed4x,
-        PressedLong
-    };
+  enum ButtonState {
+    None,
+    Pressed1x,
+    Pressed2x,
+    Pressed3x,
+    Pressed4x,
+    PressedLong
+  };
 
-    void loop();
-    ButtonState getButtonState();
+  void loop();
+  ButtonState getButtonState();
 
-  private:
-    uint8_t pin = 2;
-    bool pressed = false;
-    uint16_t pressStartTime = 0;
-    uint16_t pressStopTime = 0;
-    uint8_t pressedCounter = 0;
+private:
+  uint8_t pin = 2;
+  bool pressed = false;
+  uint16_t pressStartTime = 0;
+  uint16_t pressStopTime = 0;
+  uint8_t pressedCounter = 0;
 
-    ButtonState m_buttonState = ButtonState::None;
+  ButtonState m_buttonState = ButtonState::None;
 };
 
 #endif

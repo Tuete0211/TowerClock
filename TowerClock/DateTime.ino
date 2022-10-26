@@ -2,7 +2,7 @@
 //  ### Time ###  //
 //                //
 void printTowerTime(CRGB color) {
-    // get current time from RTC
+  // get current time from RTC
   DateTime now = RTC.now();
 
   // define current time variables
@@ -13,21 +13,21 @@ void printTowerTime(CRGB color) {
 
   // Running Lights before full and half hour
   if ((minutes == 59 || minutes == 29) && seconds >= 0 && seconds < 45) {
-    updateBrightness(); // change brightness depending on brightness of room (sensor)
-    
+    updateBrightness();  // change brightness depending on brightness of room (sensor)
+
     static float startIndex = 0;
     startIndex = startIndex - 0.5f; /* motion speed */
     displayRunningLights((int)startIndex, true, true);
-    
+
     printTowerLight();
     currentMin = 111;
     return;
   }
-  
+
   // update clock every minute
   if (currentMin != minutes) {
     clearClock();
-    updateBrightness(); // change brightness depending on brightness of room (sensor)
+    updateBrightness();  // change brightness depending on brightness of room (sensor)
     checkForDST(now);
     Line(2, 50, colors.Black);
     Line((hour / 10), 50, color);
@@ -41,12 +41,12 @@ void printTowerTime(CRGB color) {
     Line((minutes % 10), 23, color);
     currentMin = minutes;
   }
-  
+
   // update seconds
   if (currentSec != seconds) {
     if (currentSec / 10 != seconds / 10) {
       Line(5, 16, colors.Black);
-      Line((seconds /10), 16, color);
+      Line((seconds / 10), 16, color);
     }
     Line(9, 6, colors.Black);
     Line((seconds % 10), 6, color);
@@ -64,8 +64,7 @@ void checkForDST(DateTime now) {
   if (now.month() >= 4 && now.month() <= 9 && DSTOffset == 0) {
     // summertime
     DSTOffset = 1;
-  }
-  else if (now.month() == 3 && now.day() >= 25 && DSTOffset == 0) {
+  } else if (now.month() == 3 && now.day() >= 25 && DSTOffset == 0) {
     switch (RTCHardware.getDoW()) {
       case 7:
         if (now.hour() >= 2)
@@ -98,45 +97,43 @@ void checkForDST(DateTime now) {
           DSTOffset = 1;
         break;
     }
-  }
-  else if (now.month() >= 3 && now.month() >= 11 && DSTOffset == 1) {
+  } else if (now.month() >= 3 && now.month() >= 11 && DSTOffset == 1) {
     // normal time (winter)
     DSTOffset = 0;
-  }
-  else if (now.month() == 10) {
-    if(now.day() >= 25 && DSTOffset == 1) {
-    switch (RTCHardware.getDoW()) {
-      case 7:
-        if (now.hour() >= 2)
-          DSTOffset = 0;
-        else
-          DSTOffset = 1;
-        break;
-      case 1:
-        if (now.day() >= 26)
-          DSTOffset = 0;
-        break;
-      case 2:
-        if (now.day() >= 27)
-          DSTOffset = 0;
-        break;
-      case 3:
-        if (now.day() >= 28)
-          DSTOffset = 0;
-        break;
-      case 4:
-        if (now.day() >= 29)
-          DSTOffset = 0;
-        break;
-      case 5:
-        if (now.day() >= 30)
-          DSTOffset = 0;
-        break;
-      case 6:
-        if (now.day() >= 31)
-          DSTOffset = 0;
-        break;
-    }
+  } else if (now.month() == 10) {
+    if (now.day() >= 25 && DSTOffset == 1) {
+      switch (RTCHardware.getDoW()) {
+        case 7:
+          if (now.hour() >= 2)
+            DSTOffset = 0;
+          else
+            DSTOffset = 1;
+          break;
+        case 1:
+          if (now.day() >= 26)
+            DSTOffset = 0;
+          break;
+        case 2:
+          if (now.day() >= 27)
+            DSTOffset = 0;
+          break;
+        case 3:
+          if (now.day() >= 28)
+            DSTOffset = 0;
+          break;
+        case 4:
+          if (now.day() >= 29)
+            DSTOffset = 0;
+          break;
+        case 5:
+          if (now.day() >= 30)
+            DSTOffset = 0;
+          break;
+        case 6:
+          if (now.day() >= 31)
+            DSTOffset = 0;
+          break;
+      }
     } else {
       DSTOffset = 1;
     }
@@ -159,7 +156,7 @@ void printTowerDate(CRGB color) {
     currentMin = minutes;
   }
 
-  if (currentDate != day || int(displayedBrightness * 10) != int(brightness * 10) ) {
+  if (currentDate != day || int(displayedBrightness * 10) != int(brightness * 10)) {
     int tenDay = day / 10;
     //Line(4, 45, colors.Black);
     Line(tenDay, 45, color);

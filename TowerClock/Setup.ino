@@ -2,7 +2,7 @@
 //  ### SETUP ### //
 //                //
 void setup() {
-  delay(1000); // power-up safety delay
+  delay(1000);  // power-up safety delay
 
   // Open Serial to be able to connect from computer
   Serial.begin(9600);
@@ -12,7 +12,7 @@ void setup() {
 
   // ButtonHandler
   modeButton = ButtonHandler(MODE_PIN);
-  
+
   // RTC
   Wire.begin();
   //if (DEBUG)printTime();
@@ -39,7 +39,7 @@ void setup() {
 void welcomeProgram() {
   FastLED.clear();
   delay(20);
-  
+
   // FIRST: white dot wandering up the tower
   for (int i = 0; i < 22; i++) {
     FastLED.clear();
@@ -103,7 +103,7 @@ void welcomeProgram() {
     delay(15);
   }
   FastLED.clear();
-  
+
   // SECOND: wandering lila and red dots to fill tower lights
   for (int i = 0; i < NUM_LEDS_CLOCK; i++) {
     FastLED.clear();

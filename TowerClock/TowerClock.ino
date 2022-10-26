@@ -21,7 +21,7 @@
 #include <DS3231.h>
 #include <FastLED.h>
 
-#define VERSION 2.1     // This Script is created for Version 2 and above. Since v2 and v2.1 have slightly different wiring it's defined here.
+#define VERSION 2.1  // This Script is created for Version 2 and above. Since v2 and v2.1 have slightly different wiring it's defined here.
 
 //pin config
 #define LED_PIN 3
@@ -39,7 +39,7 @@ DS3231 RTCHardware;
 CRGB leds[NUM_LEDS];
 
 //colors
-float brightness = 127; // 0-255
+float brightness = 127;  // 0-255
 float displayedBrightness = 127;
 struct CustomColors {
   CRGB Red = CRGB(255, 0, 0);
@@ -48,7 +48,7 @@ struct CustomColors {
   CRGB Yellow = CRGB(255, 255, 0);
   CRGB Cyan = CRGB(0, 255, 255);
   CRGB Magenta = CRGB(255, 0, 255);
-  CRGB UpperDeck = CRGB(15, 0, 100);    //*/CRGB(20, 0, 200);
+  CRGB UpperDeck = CRGB(15, 0, 100);  //*/CRGB(20, 0, 200);
   CRGB Black = CRGB(0, 0, 0);
   CRGB White = CRGB(180, 180, 180);
 } colors;
@@ -88,27 +88,32 @@ void loop() {
   updateMode();
   delay(2);
   switch (currentMode) {
-    case Mode::Time: {                 // display time
+    case Mode::Time:
+      {  // display time
         printTowerLight();
         printTowerTime(colors.White);
         break;
       }
-    case Mode::Date: {                 // display date
+    case Mode::Date:
+      {  // display date
         printTowerLight();
         printTowerDate(colors.White);
         break;
       }
-    case Mode::Temperature: {                 // display temperature
+    case Mode::Temperature:
+      {  // display temperature
         printTowerLight();
         printTowerTemperature();
         break;
       }
-    case Mode::Idle: {                 // display without time
-        updateBrightness(); // change brightness depending on brightness of room (sensor)
+    case Mode::Idle:
+      {                      // display without time
+        updateBrightness();  // change brightness depending on brightness of room (sensor)
         printTowerLight();
         break;
       }
-    case Mode::Rainbow: {                 // display rainbow
+    case Mode::Rainbow:
+      {  // display rainbow
         updateBrightness();
         static float startIndex = 0;
         startIndex = startIndex - 0.5f; /* motion speed */
@@ -117,7 +122,8 @@ void loop() {
         printTowerLight();
         break;
       }
-    case Mode::Stripes: {                 // display stripes
+    case Mode::Stripes:
+      {  // display stripes
         updateBrightness();
         static float startIndex = 0;
         startIndex = startIndex + 0.8f; /* motion speed */
@@ -126,7 +132,8 @@ void loop() {
         printTowerLight();
         break;
       }
-    case Mode::Lesson: {                 // display clock to learn
+    case Mode::Lesson:
+      {  // display clock to learn
         updateBrightness();
         FastLED.clear();
         fill_solid(leds, NUM_LEDS_CLOCK, colors.White);
@@ -134,16 +141,18 @@ void loop() {
         printTowerLight();
         break;
       }
-    case Mode::SerialConnection: {           // set time via Serial Connection
+    case Mode::SerialConnection:
+      {  // set time via Serial Connection
         //setClockSerial();
         static float startIndex = 0;
         startIndex = startIndex + 0.3f; /* motion speed */
-        FillLEDsFromPaletteColors( (int)startIndex, SetupRedAndGreenStripedPalette(), LINEARBLEND);
+        FillLEDsFromPaletteColors((int)startIndex, SetupRedAndGreenStripedPalette(), LINEARBLEND);
         FastLED.show();
         break;
       }
-    default: {
-        fill_solid( leds, NUM_LEDS, CRGB::Red);
+    default:
+      {
+        fill_solid(leds, NUM_LEDS, CRGB::Red);
         FastLED.show();
       }
   }
@@ -159,7 +168,7 @@ void updateMode() {
       // increment mode
       currentMode = Mode(currentMode + 1);
       if (currentMode >= NUM_MODES)
-          currentMode = Mode::Time;
+        currentMode = Mode::Time;
       modeChanged = true;
       break;
     case ButtonHandler::ButtonState::Pressed2x:
@@ -208,7 +217,7 @@ void updateMode() {
 //                              //
 //  ### Brightness Watcher ###  //
 //                              //
-void updateBrightness() { // Read analog sensor to detect brightness
+void updateBrightness() {  // Read analog sensor to detect brightness
   int sensorWert = analogRead(BRIGHTNESS_PIN);
   int newBrightness;
 
@@ -249,7 +258,7 @@ void printTowerTemperature() {
   }
 
   float currentTemp = RTCHardware.getTemperature();
-  int positionTemp = map(currentTemp, 15 , 30, 0, NUM_LEDS_CLOCK);
+  int positionTemp = map(currentTemp, 15, 30, 0, NUM_LEDS_CLOCK);
   fill_gradient_RGB(leds, NUM_LEDS_CLOCK, CRGB::DarkBlue, CRGB::DeepSkyBlue, CRGB::DarkOrange, CRGB::DarkRed);
   leds[positionTemp] = CRGB::Black;
   if (leds[positionTemp - 1]) {
@@ -273,19 +282,17 @@ void Line(int height, int pos, CRGB color) {
   FastLED.show();
 }
 
-void FillLEDsFromPaletteColors( uint8_t colorIndex, CRGBPalette16 currentPalette, TBlendType currentBlending)
-{
-  for ( int i = 0; i < NUM_LEDS_CLOCK; i++) {
-    leds[i] = ColorFromPalette( currentPalette, colorIndex, /*brightness*/ 255, currentBlending);
+void FillLEDsFromPaletteColors(uint8_t colorIndex, CRGBPalette16 currentPalette, TBlendType currentBlending) {
+  for (int i = 0; i < NUM_LEDS_CLOCK; i++) {
+    leds[i] = ColorFromPalette(currentPalette, colorIndex, /*brightness*/ 255, currentBlending);
     colorIndex += 3;
   }
 }
 
-CRGBPalette16 SetupBlackAndWhiteStripedPalette()
-{
+CRGBPalette16 SetupBlackAndWhiteStripedPalette() {
   CRGBPalette16 currentPalette;
   // 'black out' all 16 palette entries...
-  fill_solid( currentPalette, 16, CRGB::Black);
+  fill_solid(currentPalette, 16, CRGB::Black);
   // and set every fourth one to white.
   currentPalette[0] = CRGB::White;
   currentPalette[4] = CRGB::White;
@@ -294,11 +301,10 @@ CRGBPalette16 SetupBlackAndWhiteStripedPalette()
   return currentPalette;
 }
 
-CRGBPalette16 SetupRedAndGreenStripedPalette()
-{
+CRGBPalette16 SetupRedAndGreenStripedPalette() {
   CRGBPalette16 currentPalette;
   // 'black out' all 16 palette entries...
-  fill_solid( currentPalette, 16, CRGB::Black);
+  fill_solid(currentPalette, 16, CRGB::Black);
   // and set every fourth one to white.
   currentPalette[0] = CRGB::Red;
   currentPalette[4] = CRGB::Green;
@@ -307,13 +313,13 @@ CRGBPalette16 SetupRedAndGreenStripedPalette()
   return currentPalette;
 }
 
-void displayRunningLights(int startIndex, bool brightnessSensitive, bool rainbow){
+void displayRunningLights(int startIndex, bool brightnessSensitive, bool rainbow) {
   if (brightnessSensitive && brightness == 1 || !rainbow)
-      FillLEDsFromPaletteColors( (int)startIndex, SetupBlackAndWhiteStripedPalette(), LINEARBLEND);
-    else
-      FillLEDsFromPaletteColors( (int)startIndex, RainbowStripeColors_p, LINEARBLEND); // RainbowColors_p
+    FillLEDsFromPaletteColors((int)startIndex, SetupBlackAndWhiteStripedPalette(), LINEARBLEND);
+  else
+    FillLEDsFromPaletteColors((int)startIndex, RainbowStripeColors_p, LINEARBLEND);  // RainbowColors_p
 
-   FastLED.show();
+  FastLED.show();
 }
 
 void clearClock() {

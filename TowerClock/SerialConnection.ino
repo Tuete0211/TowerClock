@@ -4,13 +4,9 @@
 void serialLoop() {
   static bool connected = false;
   static bool syncing = false;
-  if (readSerial())
-  {
+  if (readSerial()) {
     // listen for identifier
-    if (serialBuffer[0] == 'T' &&
-        serialBuffer[1] == 'C' &&
-        serialBuffer[2] == 'T' &&
-        serialBuffer[3] == 'S') {
+    if (serialBuffer[0] == 'T' && serialBuffer[1] == 'C' && serialBuffer[2] == 'T' && serialBuffer[3] == 'S') {
       // identified --> respond
       Serial.println("--TowerClock--");
       connected = true;
@@ -22,10 +18,10 @@ void serialLoop() {
       currentMode = Mode::SerialConnection;
       syncing = true;
     }
-    if (serialBuffer[0] == 'C' && serialBuffer[1] == 'D' && connected && syncing) { // timestring incomming
+    if (serialBuffer[0] == 'C' && serialBuffer[1] == 'D' && connected && syncing) {  // timestring incomming
       // listen for time string CD<YYMMDDwHHMMSS>
       if (setRTC()) {
-          // go back to time display.
+        // go back to time display.
         Serial.println("--TCS--");
         syncing = false;
         FastLED.clear();
@@ -33,8 +29,8 @@ void serialLoop() {
         currentMode = Mode::Time;
       }
     }
-    if (serialBuffer[0] == 'E' && serialBuffer[1] == 'F') { //disconnect
-        // go back to time display.
+    if (serialBuffer[0] == 'E' && serialBuffer[1] == 'F') {  //disconnect
+      // go back to time display.
       Serial.println("EF");
       connected = false;
       syncing = false;
@@ -87,28 +83,21 @@ bool setRTC() {
 // read command from serial interface (USB)
 // syntax: <data>\r\n
 // save the data in global serialBuffer variable
-bool readSerial()
-{
+bool readSerial() {
   static uint8_t idx = 0;
   static char charBuffer[20];
 
-  while (Serial.available() > 0)
-  {
+  while (Serial.available() > 0) {
     char c = Serial.read();
-    if (idx > 1 && c == '\n' && charBuffer[idx - 1] == '\r')
-    {
+    if (idx > 1 && c == '\n' && charBuffer[idx - 1] == '\r') {
       charBuffer[idx - 1] = '\0';
       idx = 0;
       strcpy(serialBuffer, charBuffer);
-      return true; // complete command found
-    }
-    else if (idx < 20)
-    {
+      return true;  // complete command found
+    } else if (idx < 20) {
       charBuffer[idx++] = c;
       return false;
-    }
-    else if (idx >= 20)
-    {
+    } else if (idx >= 20) {
       idx = 0;
     }
   }
